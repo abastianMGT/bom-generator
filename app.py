@@ -38,4 +38,25 @@ if survey_file and bom_file:
             how="left"
         )
 
+        # ✅ Show warning if any mappings were not found
         if merged["Hardware_SKU"].isnull().any():
+            st.warning("⚠️ Some combinations were not found in your BOM mapping file.")
+
+        # Default quantity to 1 if not defined
+        merged["Quantity"] = merged.get("Quantity", 1)
+
+        # 📦 Final grouped BOM
+        grouped = merged.groupby(
+            ["Model_Number", "Mount_Type", "Hardware_SKU"],
+            as_index=False
+        )["Quantity"].sum()
+
+        st.subheader("🔧 Generated Bill of Materials")
+        st.dataframe(grouped)
+
+        # 💾 Download CSV
+        csv = grouped.to_csv(index=False).encode()
+        st.download_button("📥 Download BOM CSV", csv, "generated_bom.csv", "text/csv")
+
+    except Exception as e:
+        st.error(f"❌ An error occurred: {e}")
