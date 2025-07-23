@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 
@@ -15,18 +16,17 @@ if survey_file and bom_file:
     survey_df = pd.read_csv(survey_file)
     bom_df = pd.read_csv(bom_file)
 
-    # Show preview
     st.subheader("📋 Survey Data")
     st.dataframe(survey_df.head())
 
     st.subheader("🧠 Mapping Logic (BOM Reference)")
     st.dataframe(bom_df.head())
 
-    # Core logic: expand mount types into SKUs
-    st.subheader("🔧 Generated BOM")
     try:
-        survey_df["Mount_Type"] = survey_df["Mount_Type"].str.strip()
-        survey_df["Model_Number"] = survey_df["Model_Number"].str.strip()
+        # Use 'Mount Bracket' column as Mount_Type
+        survey_df = survey_df.rename(columns={"Mount Bracket": "Mount_Type"})
+        survey_df["Mount_Type"] = survey_df["Mount_Type"].astype(str).str.strip()
+        survey_df["Model_Number"] = survey_df["Model_Number"].astype(str).str.strip()
 
         merged = survey_df.merge(
             bom_df,
@@ -40,6 +40,7 @@ if survey_file and bom_file:
         merged["Quantity"] = merged.get("Quantity", 1)
         grouped = merged.groupby(["Model_Number", "Mount_Type", "Hardware_SKU"], as_index=False)["Quantity"].sum()
 
+        st.subheader("🔧 Generated BOM")
         st.dataframe(grouped)
 
         csv = grouped.to_csv(index=False).encode()
